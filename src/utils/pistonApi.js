@@ -1,17 +1,32 @@
 // src/utils/pistonApi.js
 
-export const runCode = async (language, code) => {
-  const response = await fetch("https://emkc.org/api/v2/piston/execute", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      language,
-      source: code,
-    }),
+import axios from "axios";
+
+// Piston API에서 지원하는 런타임 버전을 가져오는 함수
+export const fetchRuntimes = async () => {
+  const response = await axios.get("https://emkc.org/api/v2/piston/runtimes");
+  return response.data;
+};
+
+// 각 언어의 기본 런타임 버전을 가져오는 함수
+export const getDefaultVersion = (language, runtimes) => {
+  const runtime = runtimes.find((rt) => rt.language === language);
+  return runtime ? runtime.version : "latest";
+};
+
+export const runCode = async (language, code, runtimes) => {
+  const version = getDefaultVersion(language, runtimes);
+
+  const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+    language,
+    version,
+    files: [
+      {
+        name: "main",
+        content: code,
+      },
+    ],
   });
 
-  const result = await response.json();
-  return result;
+  return response.data;
 };

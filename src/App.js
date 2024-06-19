@@ -1,11 +1,10 @@
-// src/App.js
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import MainContent from "./components/MainContent";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./index.css"; // Tailwind CSS 임포트
+import { fetchRuntimes, runCode } from "./utils/pistonApi";
 
 const initialFiles = {
   "script.js": {
@@ -51,6 +50,17 @@ export default function App() {
   const [files, setFiles] = useState(initialFiles);
   const [fileName, setFileName] = useState("script.js");
   const [newFileName, setNewFileName] = useState("");
+  const [output, setOutput] = useState("");
+  const [runtimes, setRuntimes] = useState([]);
+
+  useEffect(() => {
+    const fetchAndSetRuntimes = async () => {
+      const runtimes = await fetchRuntimes();
+      setRuntimes(runtimes);
+    };
+
+    fetchAndSetRuntimes();
+  }, []);
 
   const file = files[fileName];
 
@@ -82,6 +92,11 @@ export default function App() {
     setFileName(remainingFileNames[0]);
   };
 
+  const executeCode = async () => {
+    const result = await runCode(file.language, file.value, runtimes);
+    setOutput(result);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -101,8 +116,9 @@ export default function App() {
             files={files}
             setFiles={setFiles}
             fileName={fileName}
+            executeCode={executeCode}
           />
-          <Footer />
+          <Footer output={output} />
         </div>
       </div>
     </div>
