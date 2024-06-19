@@ -3,8 +3,9 @@ import Sidebar from "./components/Sidebar";
 import MainContent from "./components/MainContent";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import "./index.css"; // Tailwind CSS 임포트
+import "./index.css";
 import { fetchRuntimes, runCode } from "./utils/pistonApi";
+import { createFile as createFileAPI } from "./utils/api"; // createFile API 함수 import
 
 const initialFiles = {
   "script.js": {
@@ -47,30 +48,60 @@ const getFileLanguage = (fileName) => {
 };
 
 export default function App() {
-  const [files, setFiles] = useState(initialFiles);
+  const [files, setFiles] = useState(() => {
+    const savedFiles = localStorage.getItem("files");
+    return savedFiles ? JSON.parse(savedFiles) : initialFiles;
+  });
   const [fileName, setFileName] = useState("script.js");
   const [newFileName, setNewFileName] = useState("");
   const [output, setOutput] = useState("");
   const [runtimes, setRuntimes] = useState([]);
+  const projectId = 1; // 하드코딩된 projectId
 
   useEffect(() => {
     const fetchAndSetRuntimes = async () => {
       const runtimes = await fetchRuntimes();
       setRuntimes(runtimes);
     };
-
     fetchAndSetRuntimes();
   }, []);
 
+  useEffect(() => {
+    const saveInitialFilesToServer = async () => {
+      const savedFiles = localStorage.getItem("files");
+      if (!savedFiles) {
+        try {
+          for (const fileName in initialFiles) {
+            const file = initialFiles[fileName];
+            const createdFile = await createFileAPI(
+              projectId,
+              file.name,
+              file.language
+            );
+            initialFiles[file.name].id = createdFile.id; // 서버에서 받은 파일 ID 저장
+          }
+          localStorage.setItem("files", JSON.stringify(initialFiles));
+          setFiles(initialFiles);
+        } catch (error) {
+          console.error("Failed to save initial files to server:", error);
+        }
+      }
+    };
+    saveInitialFilesToServer();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("files", JSON.stringify(files));
+  }, [files]);
+
   const file = files[fileName];
 
-  const createFile = () => {
-    if (!newFileName || files[newFileName]) return;
-
+  const createFileLocal = (newFileName, fileId) => {
     const newFileLanguage = getFileLanguage(newFileName);
     const newFiles = {
       ...files,
       [newFileName]: {
+        id: fileId, // 서버에서 받은 파일 ID 저장
         name: newFileName,
         language: newFileLanguage,
         value: "",
@@ -78,10 +109,9 @@ export default function App() {
     };
     setFiles(newFiles);
     setFileName(newFileName);
-    setNewFileName("");
   };
 
-  const deleteFile = (name) => {
+  const deleteFileLocal = (name) => {
     if (Object.keys(files).length === 1) return;
 
     const newFiles = { ...files };
@@ -102,13 +132,14 @@ export default function App() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
+          projectId={projectId} // 하드코딩된 projectId 전달
           files={files}
           fileName={fileName}
           setFileName={setFileName}
           newFileName={newFileName}
           setNewFileName={setNewFileName}
-          createFile={createFile}
-          deleteFile={deleteFile}
+          createFileLocal={createFileLocal}
+          deleteFileLocal={deleteFileLocal}
         />
         <div className="flex flex-col flex-1 overflow-hidden">
           <MainContent
