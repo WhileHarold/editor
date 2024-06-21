@@ -45,8 +45,9 @@ export default function App() {
         const fetchedFiles = await fetchFilesAPI(projectId);
         console.log("Fetched files:", fetchedFiles);
         const filesObject = fetchedFiles.reduce((acc, file) => {
-          acc[file.file_name] = {
-            name: file.file_name,
+          const fileName = file.file_name.split(".")[0]; // 확장자를 제거한 파일 이름
+          acc[fileName] = {
+            name: fileName,
             language: getFileLanguage(file.file_type),
             value: file.content,
             id: file.id,
@@ -77,7 +78,7 @@ export default function App() {
     const newFileLanguage = getFileLanguage(extension);
 
     try {
-      if (files[newFileName]) {
+      if (files[name]) {
         console.error("이미 존재하는 파일 이름입니다.");
         return;
       }
@@ -86,8 +87,9 @@ export default function App() {
 
       const fetchedFiles = await fetchFilesAPI(projectId);
       const filesObject = fetchedFiles.reduce((acc, file) => {
-        acc[file.file_name] = {
-          name: file.file_name,
+        const fileName = file.file_name.split(".")[0]; // 확장자를 제거한 파일 이름
+        acc[fileName] = {
+          name: fileName,
           language: getFileLanguage(file.file_type),
           value: file.content,
           id: file.id,
@@ -96,7 +98,7 @@ export default function App() {
       }, {});
 
       setFiles(filesObject);
-      setFileName(newFileName);
+      setFileName(name); // 파일 이름을 확장자 없이 설정
     } catch (error) {
       console.error("Failed to create file:", error);
     }
