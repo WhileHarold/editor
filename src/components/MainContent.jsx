@@ -1,5 +1,3 @@
-// src/components/MainContent.jsx
-
 import React from "react";
 import Editor from "@monaco-editor/react";
 
@@ -10,6 +8,7 @@ export default function MainContent({
   fileName,
   executeCode,
 }) {
+  console.log("MainContent file:", file); // 디버깅용 로그
   return (
     <main
       className="flex-grow flex flex-col overflow-auto"
@@ -32,6 +31,7 @@ export default function MainContent({
           value={file.value}
           theme="vs-dark"
           onChange={(value) => {
+            console.log("Editor onChange value:", value); // 디버깅용 로그
             const newFiles = {
               ...files,
               [fileName]: { ...files[fileName], value },

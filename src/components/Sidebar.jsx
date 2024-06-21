@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import fileMaker from "../assets/images/fileMaker.svg";
 import {
   createFile as createFileAPI,
-  deleteFile as deleteFileAPI,
+  deleteFile as deleteFileAPI, // 추가
 } from "../utils/api";
 
 export default function Sidebar({
@@ -31,9 +31,7 @@ export default function Sidebar({
         alert("Please enter a valid file name with an extension.");
         return;
       }
-      const createdFile = await createFileAPI(projectId, name, extension);
-      createFileLocal(newFileName);
-      setFileName(newFileName);
+      await createFileLocal(newFileName);
       setNewFileName("");
       setShowFileInput(false);
     } catch (error) {
@@ -71,7 +69,10 @@ export default function Sidebar({
           Object.keys(files).map((name) => (
             <div key={name} className="flex items-center mb-2">
               <button
-                onClick={() => setFileName(name)}
+                onClick={() => {
+                  console.log("파일 선택됨:", name); // 디버깅용 로그
+                  setFileName(name);
+                }}
                 className="flex-grow text-left px-2 py-1 text-black whitespace-nowrap"
               >
                 {name}

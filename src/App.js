@@ -4,8 +4,12 @@ import MainContent from "./components/MainContent";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./index.css";
-import { fetchRuntimes, runCode } from "./utils/pistonApi";
-import { getFilesByProjectId as fetchFilesAPI } from "./utils/api";
+import {
+  getFilesByProjectId as fetchFilesAPI,
+  updateFile as updateFileAPI,
+  executeFile as executeFileAPI,
+  createFile as createFileAPI,
+} from "./utils/api";
 
 const getFileLanguage = (fileType) => {
   switch (fileType) {
@@ -33,22 +37,13 @@ export default function App() {
   const [fileName, setFileName] = useState("");
   const [newFileName, setNewFileName] = useState("");
   const [output, setOutput] = useState("");
-  const [runtimes, setRuntimes] = useState([]);
   const projectId = 2;
-
-  useEffect(() => {
-    const fetchAndSetRuntimes = async () => {
-      const runtimes = await fetchRuntimes();
-      setRuntimes(runtimes);
-    };
-    fetchAndSetRuntimes();
-  }, []);
 
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         const fetchedFiles = await fetchFilesAPI(projectId);
-        console.log("Fetched files:", fetchedFiles); // 디버깅을 위해 콘솔에 출력
+        console.log("Fetched files:", fetchedFiles);
         const filesObject = fetchedFiles.reduce((acc, file) => {
           acc[file.file_name] = {
             name: file.file_name,
@@ -58,7 +53,7 @@ export default function App() {
           };
           return acc;
         }, {});
-        console.log("Files object:", filesObject); // 디버깅을 위해 콘솔에 출력
+        console.log("Files object:", filesObject);
         setFiles(filesObject);
         if (Object.keys(filesObject).length > 0) {
           setFileName(Object.keys(filesObject)[0]);
@@ -75,20 +70,39 @@ export default function App() {
   }, [files]);
 
   const file = files[fileName] || { language: "", value: "" };
+  console.log("App file:", file);
 
-  const createFileLocal = (newFileName) => {
+  const createFileLocal = async (newFileName) => {
     const [name, extension] = newFileName.split(".");
     const newFileLanguage = getFileLanguage(extension);
-    const newFiles = {
-      ...files,
-      [newFileName]: {
-        name: newFileName,
-        language: newFileLanguage,
-        value: "",
-      },
-    };
-    setFiles(newFiles);
-    setFileName(newFileName);
+
+    try {
+      // 서버에 파일 생성 요청 전에 중복 확인
+      if (files[newFileName]) {
+        console.error("이미 존재하는 파일 이름입니다.");
+        return;
+      }
+
+      // 서버에 파일 생성 요청
+      const createdFile = await createFileAPI(projectId, name, extension);
+
+      // 파일 목록을 다시 불러옴
+      const fetchedFiles = await fetchFilesAPI(projectId);
+      const filesObject = fetchedFiles.reduce((acc, file) => {
+        acc[file.file_name] = {
+          name: file.file_name,
+          language: getFileLanguage(file.file_type),
+          value: file.content,
+          id: file.id,
+        };
+        return acc;
+      }, {});
+
+      setFiles(filesObject);
+      setFileName(newFileName);
+    } catch (error) {
+      console.error("Failed to create file:", error);
+    }
   };
 
   const deleteFileLocal = (name) => {
@@ -103,8 +117,33 @@ export default function App() {
   };
 
   const executeCode = async () => {
-    const result = await runCode(file.language, file.value, runtimes);
-    setOutput(result);
+    console.log("executeCode 함수 호출됨");
+    const currentFile = files[fileName];
+    console.log("Current file for execution:", currentFile);
+
+    if (!currentFile.id) {
+      console.error("파일 ID가 없습니다:", currentFile);
+      return;
+    }
+
+    try {
+      console.log("파일 업데이트 요청:", currentFile);
+      await updateFileAPI(projectId, currentFile.id, {
+        name: currentFile.name,
+        type: currentFile.language,
+        content: currentFile.value,
+      });
+
+      console.log("파일 실행 요청:", currentFile.id);
+      const result = await executeFileAPI(projectId, currentFile.id);
+      console.log("파일 실행 결과:", result);
+
+      const output = result || "No output";
+      setOutput(output);
+    } catch (error) {
+      console.error("Failed to execute code:", error);
+      setOutput(`Failed to execute code: ${error.message}`);
+    }
   };
 
   return (
