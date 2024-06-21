@@ -63,10 +63,10 @@ export default function Sidebar({
         </div>
       </div>
       <div className="p-4 flex-grow overflow-auto">
-        {Object.keys(files).length === 0 ? (
+        {Object.entries(files).length === 0 ? (
           <div>No files available</div>
         ) : (
-          Object.keys(files).map((name) => (
+          Object.entries(files).map(([name, file]) => (
             <div key={name} className="flex items-center mb-2">
               <button
                 onClick={() => {

@@ -32,6 +32,19 @@ const getFileLanguage = (fileType) => {
   }
 };
 
+const getFileNameWithExtension = (fileName, fileType) => {
+  const extensionMap = {
+    javascript: "js",
+    css: "css",
+    html: "html",
+    typescript: "ts",
+    json: "json",
+    java: "java",
+    python: "py",
+  };
+  return `${fileName}.${extensionMap[fileType] || ""}`;
+};
+
 export default function App() {
   const [files, setFiles] = useState({});
   const [fileName, setFileName] = useState("");
@@ -45,9 +58,12 @@ export default function App() {
         const fetchedFiles = await fetchFilesAPI(projectId);
         console.log("Fetched files:", fetchedFiles);
         const filesObject = fetchedFiles.reduce((acc, file) => {
-          const fileName = file.file_name.split(".")[0]; // 확장자를 제거한 파일 이름
-          acc[fileName] = {
-            name: fileName,
+          const fullFileName = getFileNameWithExtension(
+            file.file_name,
+            getFileLanguage(file.file_type)
+          );
+          acc[fullFileName] = {
+            name: fullFileName,
             language: getFileLanguage(file.file_type),
             value: file.content,
             id: file.id,
@@ -78,7 +94,7 @@ export default function App() {
     const newFileLanguage = getFileLanguage(extension);
 
     try {
-      if (files[name]) {
+      if (files[newFileName]) {
         console.error("이미 존재하는 파일 이름입니다.");
         return;
       }
@@ -87,9 +103,12 @@ export default function App() {
 
       const fetchedFiles = await fetchFilesAPI(projectId);
       const filesObject = fetchedFiles.reduce((acc, file) => {
-        const fileName = file.file_name.split(".")[0]; // 확장자를 제거한 파일 이름
-        acc[fileName] = {
-          name: fileName,
+        const fullFileName = getFileNameWithExtension(
+          file.file_name,
+          getFileLanguage(file.file_type)
+        );
+        acc[fullFileName] = {
+          name: fullFileName,
           language: getFileLanguage(file.file_type),
           value: file.content,
           id: file.id,
@@ -98,7 +117,7 @@ export default function App() {
       }, {});
 
       setFiles(filesObject);
-      setFileName(name); // 파일 이름을 확장자 없이 설정
+      setFileName(newFileName); // 파일 이름을 확장자 포함하여 설정
     } catch (error) {
       console.error("Failed to create file:", error);
     }
