@@ -52,6 +52,21 @@ export default function App() {
   const [output, setOutput] = useState("");
   const projectId = 2;
 
+  // 페이지 새로 고침 또는 닫기 시 파일 내용과 현재 파일 이름을 로컬 스토리지에 저장
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      localStorage.setItem("files", JSON.stringify(files));
+      localStorage.setItem("currentFileName", fileName);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [files, fileName]);
+
+  // 페이지 로드 시 로컬 스토리지에서 파일 내용과 현재 파일 이름을 불러옴
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -71,9 +86,23 @@ export default function App() {
           return acc;
         }, {});
         console.log("Files object:", filesObject);
-        setFiles(filesObject);
-        if (Object.keys(filesObject).length > 0) {
-          setFileName(Object.keys(filesObject)[0]);
+
+        // 로컬 스토리지에 저장된 파일 내용을 우선으로 사용
+        const storedFiles = localStorage.getItem("files");
+        const storedFileName = localStorage.getItem("currentFileName");
+        if (storedFiles) {
+          const storedFilesObject = JSON.parse(storedFiles);
+          // 서버에서 가져온 파일 목록과 로컬 스토리지의 파일 내용을 병합
+          const mergedFiles = { ...filesObject, ...storedFilesObject };
+          setFiles(mergedFiles);
+          if (Object.keys(mergedFiles).length > 0) {
+            setFileName(storedFileName || Object.keys(mergedFiles)[0]);
+          }
+        } else {
+          setFiles(filesObject);
+          if (Object.keys(filesObject).length > 0) {
+            setFileName(Object.keys(filesObject)[0]);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch files:", error);
@@ -81,10 +110,6 @@ export default function App() {
     };
     fetchFiles();
   }, [projectId]);
-
-  useEffect(() => {
-    localStorage.setItem("files", JSON.stringify(files));
-  }, [files]);
 
   const file = files[fileName] || { language: "", value: "" };
   console.log("App file:", file);
@@ -116,7 +141,16 @@ export default function App() {
         return acc;
       }, {});
 
-      setFiles(filesObject);
+      // 로컬 스토리지에 저장된 파일 내용을 병합
+      const storedFiles = localStorage.getItem("files");
+      if (storedFiles) {
+        const storedFilesObject = JSON.parse(storedFiles);
+        const mergedFiles = { ...filesObject, ...storedFilesObject };
+        setFiles(mergedFiles);
+      } else {
+        setFiles(filesObject);
+      }
+
       setFileName(newFileName); // 파일 이름을 확장자 포함하여 설정
     } catch (error) {
       console.error("Failed to create file:", error);

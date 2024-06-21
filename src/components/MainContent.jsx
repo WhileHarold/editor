@@ -8,6 +8,14 @@ export default function MainContent({
   fileName,
   executeCode,
 }) {
+  const handleEditorChange = (value) => {
+    const newFiles = {
+      ...files,
+      [fileName]: { ...files[fileName], value },
+    };
+    setFiles(newFiles);
+  };
+
   return (
     <main
       className="flex-grow flex flex-col overflow-auto"
@@ -29,13 +37,7 @@ export default function MainContent({
           language={file.language}
           value={file.value}
           theme="vs-dark"
-          onChange={(value) => {
-            const newFiles = {
-              ...files,
-              [fileName]: { ...files[fileName], value },
-            };
-            setFiles(newFiles);
-          }}
+          onChange={handleEditorChange}
         />
       </div>
     </main>
