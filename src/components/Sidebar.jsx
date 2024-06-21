@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import fileMaker from "../assets/images/fileMaker.svg";
 import {
   createFile as createFileAPI,
-  deleteFile as deleteFileAPI, // 추가
+  deleteFile as deleteFileAPI,
 } from "../utils/api";
 
 export default function Sidebar({

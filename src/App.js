@@ -77,16 +77,13 @@ export default function App() {
     const newFileLanguage = getFileLanguage(extension);
 
     try {
-      // 서버에 파일 생성 요청 전에 중복 확인
       if (files[newFileName]) {
         console.error("이미 존재하는 파일 이름입니다.");
         return;
       }
 
-      // 서버에 파일 생성 요청
       const createdFile = await createFileAPI(projectId, name, extension);
 
-      // 파일 목록을 다시 불러옴
       const fetchedFiles = await fetchFilesAPI(projectId);
       const filesObject = fetchedFiles.reduce((acc, file) => {
         acc[file.file_name] = {
