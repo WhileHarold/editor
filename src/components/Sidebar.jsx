@@ -6,14 +6,15 @@ import {
 } from "../utils/api";
 
 export default function Sidebar({
-  projectId, // 하드코딩된 프로젝트 ID를 prop으로 받아옴
+  projectId,
   files,
+  setFiles,
   fileName,
   setFileName,
   newFileName,
   setNewFileName,
-  createFileLocal, // 로컬 파일 생성 함수
-  deleteFileLocal, // 로컬 파일 삭제 함수
+  createFileLocal,
+  deleteFileLocal,
 }) {
   const [showFileInput, setShowFileInput] = useState(false);
 
@@ -25,11 +26,16 @@ export default function Sidebar({
     if (!newFileName || files[newFileName]) return;
 
     try {
-      await createFileAPI(projectId, newFileName, getFileLanguage(newFileName));
-      createFileLocal(newFileName); // 로컬 파일 생성
-      setFileName(newFileName); // 생성된 파일로 파일 선택 변경
-      setNewFileName(""); // 파일 입력 초기화
-      setShowFileInput(false); // 파일 입력 창 닫기
+      const [name, extension] = newFileName.split(".");
+      if (!extension) {
+        alert("Please enter a valid file name with an extension.");
+        return;
+      }
+      const createdFile = await createFileAPI(projectId, name, extension);
+      createFileLocal(newFileName);
+      setFileName(newFileName);
+      setNewFileName("");
+      setShowFileInput(false);
     } catch (error) {
       console.error("Failed to create file:", error);
     }
@@ -37,10 +43,9 @@ export default function Sidebar({
 
   const handleDeleteFile = async (name) => {
     try {
-      // files 객체에서 파일 ID를 가져옴
       const fileId = files[name].id;
-      await deleteFileAPI(projectId, fileId); // 서버에서 파일 삭제
-      deleteFileLocal(name); // 로컬 파일 삭제
+      await deleteFileAPI(projectId, fileId);
+      deleteFileLocal(name);
     } catch (error) {
       console.error("Failed to delete file:", error);
     }
@@ -60,22 +65,26 @@ export default function Sidebar({
         </div>
       </div>
       <div className="p-4 flex-grow overflow-auto">
-        {Object.keys(files).map((name) => (
-          <div key={name} className="flex items-center mb-2">
-            <button
-              onClick={() => setFileName(name)}
-              className="flex-grow text-left px-2 py-1 text-black whitespace-nowrap"
-            >
-              {name}
-            </button>
-            <button
-              onClick={() => handleDeleteFile(name)}
-              className="ml-2 text-red-600"
-            >
-              Delete
-            </button>
-          </div>
-        ))}
+        {Object.keys(files).length === 0 ? (
+          <div>No files available</div>
+        ) : (
+          Object.keys(files).map((name) => (
+            <div key={name} className="flex items-center mb-2">
+              <button
+                onClick={() => setFileName(name)}
+                className="flex-grow text-left px-2 py-1 text-black whitespace-nowrap"
+              >
+                {name}
+              </button>
+              <button
+                onClick={() => handleDeleteFile(name)}
+                className="ml-2 text-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          ))
+        )}
         {showFileInput && (
           <div className="mt-4">
             <input

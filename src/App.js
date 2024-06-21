@@ -5,29 +5,10 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./index.css";
 import { fetchRuntimes, runCode } from "./utils/pistonApi";
-import { createFile as createFileAPI } from "./utils/api"; // createFile API 함수 import
+import { getFilesByProjectId as fetchFilesAPI } from "./utils/api";
 
-const initialFiles = {
-  "script.js": {
-    name: "script.js",
-    language: "javascript",
-    value: "// JavaScript code here",
-  },
-  "style.css": {
-    name: "style.css",
-    language: "css",
-    value: "/* CSS code here */",
-  },
-  "index.html": {
-    name: "index.html",
-    language: "html",
-    value: "<!-- HTML code here -->",
-  },
-};
-
-const getFileLanguage = (fileName) => {
-  const extension = fileName.split(".").pop();
-  switch (extension) {
+const getFileLanguage = (fileType) => {
+  switch (fileType) {
     case "js":
       return "javascript";
     case "css":
@@ -48,15 +29,12 @@ const getFileLanguage = (fileName) => {
 };
 
 export default function App() {
-  const [files, setFiles] = useState(() => {
-    const savedFiles = localStorage.getItem("files");
-    return savedFiles ? JSON.parse(savedFiles) : initialFiles;
-  });
-  const [fileName, setFileName] = useState("script.js");
+  const [files, setFiles] = useState({});
+  const [fileName, setFileName] = useState("");
   const [newFileName, setNewFileName] = useState("");
   const [output, setOutput] = useState("");
   const [runtimes, setRuntimes] = useState([]);
-  const projectId = 1; // 하드코딩된 projectId
+  const projectId = 2;
 
   useEffect(() => {
     const fetchAndSetRuntimes = async () => {
@@ -67,41 +45,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const saveInitialFilesToServer = async () => {
-      const savedFiles = localStorage.getItem("files");
-      if (!savedFiles) {
-        try {
-          for (const fileName in initialFiles) {
-            const file = initialFiles[fileName];
-            const createdFile = await createFileAPI(
-              projectId,
-              file.name,
-              file.language
-            );
-            initialFiles[file.name].id = createdFile.id; // 서버에서 받은 파일 ID 저장
-          }
-          localStorage.setItem("files", JSON.stringify(initialFiles));
-          setFiles(initialFiles);
-        } catch (error) {
-          console.error("Failed to save initial files to server:", error);
+    const fetchFiles = async () => {
+      try {
+        const fetchedFiles = await fetchFilesAPI(projectId);
+        console.log("Fetched files:", fetchedFiles); // 디버깅을 위해 콘솔에 출력
+        const filesObject = fetchedFiles.reduce((acc, file) => {
+          acc[file.file_name] = {
+            name: file.file_name,
+            language: getFileLanguage(file.file_type),
+            value: file.content,
+            id: file.id,
+          };
+          return acc;
+        }, {});
+        console.log("Files object:", filesObject); // 디버깅을 위해 콘솔에 출력
+        setFiles(filesObject);
+        if (Object.keys(filesObject).length > 0) {
+          setFileName(Object.keys(filesObject)[0]);
         }
+      } catch (error) {
+        console.error("Failed to fetch files:", error);
       }
     };
-    saveInitialFilesToServer();
-  }, []);
+    fetchFiles();
+  }, [projectId]);
 
   useEffect(() => {
     localStorage.setItem("files", JSON.stringify(files));
   }, [files]);
 
-  const file = files[fileName];
+  const file = files[fileName] || { language: "", value: "" };
 
-  const createFileLocal = (newFileName, fileId) => {
-    const newFileLanguage = getFileLanguage(newFileName);
+  const createFileLocal = (newFileName) => {
+    const [name, extension] = newFileName.split(".");
+    const newFileLanguage = getFileLanguage(extension);
     const newFiles = {
       ...files,
       [newFileName]: {
-        id: fileId, // 서버에서 받은 파일 ID 저장
         name: newFileName,
         language: newFileLanguage,
         value: "",
@@ -132,8 +112,9 @@ export default function App() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          projectId={projectId} // 하드코딩된 projectId 전달
+          projectId={projectId}
           files={files}
+          setFiles={setFiles}
           fileName={fileName}
           setFileName={setFileName}
           newFileName={newFileName}
