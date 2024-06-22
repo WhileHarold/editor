@@ -15,7 +15,7 @@ export default function MainContent({
       <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <span>{fileName}</span>
         <button
-          className="text-white py-2 px-4 rounded"
+          className="text-white px-4 rounded"
           style={{ backgroundColor: "#457D61" }}
           onClick={executeCode}
         >
@@ -27,7 +27,7 @@ export default function MainContent({
           height="100%"
           language={file.language}
           value={file.value}
-          theme="vs-dark"
+          theme="vs-light"
           onChange={(value) => {
             const newFiles = {
               ...files,
