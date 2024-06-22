@@ -10,7 +10,6 @@ import {
   executeFile as executeFileAPI,
   createFile as createFileAPI,
 } from "./utils/api";
-
 const getFileLanguage = (fileType) => {
   switch (fileType) {
     case "js":
@@ -31,7 +30,6 @@ const getFileLanguage = (fileType) => {
       return "plaintext";
   }
 };
-
 const getFileNameWithExtension = (fileName, fileType) => {
   const extensionMap = {
     javascript: "js",
@@ -44,7 +42,6 @@ const getFileNameWithExtension = (fileName, fileType) => {
   };
   return `${fileName}.${extensionMap[fileType] || ""}`;
 };
-
 export default function App() {
   const [files, setFiles] = useState({});
   const [fileName, setFileName] = useState("");
@@ -52,21 +49,6 @@ export default function App() {
   const [output, setOutput] = useState("");
   const projectId = 2;
 
-  // 페이지 새로 고침 또는 닫기 시 파일 내용과 현재 파일 이름을 로컬 스토리지에 저장
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      localStorage.setItem("files", JSON.stringify(files));
-      localStorage.setItem("currentFileName", fileName);
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [files, fileName]);
-
-  // 페이지 로드 시 로컬 스토리지에서 파일 내용과 현재 파일 이름을 불러옴
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -86,23 +68,9 @@ export default function App() {
           return acc;
         }, {});
         console.log("Files object:", filesObject);
-
-        // 로컬 스토리지에 저장된 파일 내용을 우선으로 사용
-        const storedFiles = localStorage.getItem("files");
-        const storedFileName = localStorage.getItem("currentFileName");
-        if (storedFiles) {
-          const storedFilesObject = JSON.parse(storedFiles);
-          // 서버에서 가져온 파일 목록과 로컬 스토리지의 파일 내용을 병합
-          const mergedFiles = { ...filesObject, ...storedFilesObject };
-          setFiles(mergedFiles);
-          if (Object.keys(mergedFiles).length > 0) {
-            setFileName(storedFileName || Object.keys(mergedFiles)[0]);
-          }
-        } else {
-          setFiles(filesObject);
-          if (Object.keys(filesObject).length > 0) {
-            setFileName(Object.keys(filesObject)[0]);
-          }
+        setFiles(filesObject);
+        if (Object.keys(filesObject).length > 0) {
+          setFileName(Object.keys(filesObject)[0]);
         }
       } catch (error) {
         console.error("Failed to fetch files:", error);
@@ -111,21 +79,22 @@ export default function App() {
     fetchFiles();
   }, [projectId]);
 
+  useEffect(() => {
+    localStorage.setItem("files", JSON.stringify(files));
+  }, [files]);
+
   const file = files[fileName] || { language: "", value: "" };
   console.log("App file:", file);
 
   const createFileLocal = async (newFileName) => {
     const [name, extension] = newFileName.split(".");
     const newFileLanguage = getFileLanguage(extension);
-
     try {
       if (files[newFileName]) {
         console.error("이미 존재하는 파일 이름입니다.");
         return;
       }
-
       const createdFile = await createFileAPI(projectId, name, extension);
-
       const fetchedFiles = await fetchFilesAPI(projectId);
       const filesObject = fetchedFiles.reduce((acc, file) => {
         const fullFileName = getFileNameWithExtension(
@@ -141,43 +110,28 @@ export default function App() {
         return acc;
       }, {});
 
-      // 로컬 스토리지에 저장된 파일 내용을 병합
-      const storedFiles = localStorage.getItem("files");
-      if (storedFiles) {
-        const storedFilesObject = JSON.parse(storedFiles);
-        const mergedFiles = { ...filesObject, ...storedFilesObject };
-        setFiles(mergedFiles);
-      } else {
-        setFiles(filesObject);
-      }
-
+      setFiles(filesObject);
       setFileName(newFileName); // 파일 이름을 확장자 포함하여 설정
     } catch (error) {
       console.error("Failed to create file:", error);
     }
   };
-
   const deleteFileLocal = (name) => {
     if (Object.keys(files).length === 1) return;
-
     const newFiles = { ...files };
     delete newFiles[name];
-
     const remainingFileNames = Object.keys(newFiles);
     setFiles(newFiles);
     setFileName(remainingFileNames[0]);
   };
-
   const executeCode = async () => {
     console.log("executeCode 함수 호출됨");
     const currentFile = files[fileName];
     console.log("Current file for execution:", currentFile);
-
     if (!currentFile.id) {
       console.error("파일 ID가 없습니다:", currentFile);
       return;
     }
-
     try {
       console.log("파일 업데이트 요청:", currentFile);
       await updateFileAPI(projectId, currentFile.id, {
@@ -185,11 +139,9 @@ export default function App() {
         type: currentFile.language,
         content: currentFile.value,
       });
-
       console.log("파일 실행 요청:", currentFile.id);
       const result = await executeFileAPI(projectId, currentFile.id);
       console.log("파일 실행 결과:", result);
-
       const output = result || "No output";
       setOutput(output);
     } catch (error) {
@@ -197,7 +149,6 @@ export default function App() {
       setOutput(`Failed to execute code: ${error.message}`);
     }
   };
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
