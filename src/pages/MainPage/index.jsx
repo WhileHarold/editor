@@ -1,15 +1,16 @@
+// src/pages/MainPage.jsx
 import React, { useState, useEffect } from "react";
-import Sidebar from "./components/Sidebar";
-import MainContent from "./components/MainContent";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import "./index.css";
+import Sidebar from "../../components/Sidebar";
+import MainContent from "../../components/MainContent";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
+import "../../index.css";
 import {
   getFilesByProjectId as fetchFilesAPI,
   updateFile as updateFileAPI,
   executeFile as executeFileAPI,
   createFile as createFileAPI,
-} from "./utils/api";
+} from "../../utils/api";
 
 const getFileLanguage = (fileType) => {
   switch (fileType) {
@@ -43,6 +44,7 @@ const getFileNameWithExtension = (fileName, fileType) => {
   };
   return `${fileName}.${extensionMap[fileType] || ""}`;
 };
+
 export default function MainPage() {
   const [files, setFiles] = useState({});
   const [fileName, setFileName] = useState("");
