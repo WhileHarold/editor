@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import defineCustomTheme from "../utils/defineCustomTheme";
-import * as monaco from "monaco-editor";
+import defineCustomTheme from "../utils/defineCustomTheme"; // defineCustomTheme 모듈 경로 수정
 
 export default function MainContent({
   file,
@@ -10,34 +9,33 @@ export default function MainContent({
   fileName,
   executeCode,
 }) {
-  const [isColorBlindMode, setIsColorBlindMode] = useState(false);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null); // monaco 인스턴스를 저장할 ref
+  const [isCustomTheme, setIsCustomTheme] = useState(false); // 테마 상태 관리
 
-  const handleColorBlindModeToggle = () => {
-    console.log("Toggling color blind mode"); // 디버깅 메시지
-    setIsColorBlindMode((prev) => !prev);
+  const handleEditorDidMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco; // monaco 인스턴스를 저장
+    defineCustomTheme(monaco); // 테마 정의 함수 호출
   };
 
-  useEffect(() => {
-    defineCustomTheme(); // 테마를 미리 정의합니다.
-    console.log("Custom theme defined"); // 디버깅 메시지
-  }, []);
-
-  useEffect(() => {
-    if (isColorBlindMode) {
-      console.log("Setting custom theme"); // 디버깅 메시지
-      monaco.editor.setTheme("colorBlindFriendlyTheme");
-    } else {
-      console.log("Setting default theme"); // 디버깅 메시지
-      monaco.editor.setTheme("vs-dark");
+  const applyCustomTheme = () => {
+    if (monacoRef.current) {
+      if (isCustomTheme) {
+        monacoRef.current.editor.setTheme("vs-dark"); // 초기 테마로 설정
+      } else {
+        monacoRef.current.editor.setTheme("colorBlindFriendlyTheme"); // 커스텀 테마로 설정
+      }
+      setIsCustomTheme(!isCustomTheme); // 테마 상태 토글
     }
-  }, [isColorBlindMode]);
+  };
 
   return (
     <main
       className="flex-grow flex flex-col overflow-auto"
       style={{ backgroundColor: "#FAFFF9" }}
     >
-      <div className="flex justify-between items-center p-4 border-b border-gray-300 ">
+      <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <span>{fileName}</span>
         <div className="flex space-x-4">
           <button
@@ -50,9 +48,9 @@ export default function MainContent({
           <button
             className="text-white px-4 rounded"
             style={{ backgroundColor: "#457D61" }}
-            onClick={handleColorBlindModeToggle}
+            onClick={applyCustomTheme}
           >
-            Color Blind Mode
+            {isCustomTheme ? "Revert to Default Theme" : "Apply Custom Theme"}
           </button>
         </div>
       </div>
@@ -61,19 +59,8 @@ export default function MainContent({
           height="100%"
           language={file.language}
           value={file.value}
-          theme={isColorBlindMode ? "colorBlindFriendlyTheme" : "vs-dark"}
-          options={{
-            fontSize: isColorBlindMode ? 18 : 14, // 글자 크기를 변경합니다.
-            fontWeight: isColorBlindMode ? "bold" : "normal", // 글자 굵기를 변경합니다.
-          }}
-          onMount={(editor, monaco) => {
-            if (isColorBlindMode) {
-              console.log("onMount setting custom theme"); // 디버깅 메시지
-              monaco.editor.setTheme("colorBlindFriendlyTheme");
-            } else {
-              monaco.editor.setTheme("vs-dark");
-            }
-          }}
+          theme="vs-dark"
+          onMount={handleEditorDidMount} // 에디터가 마운트될 때 호출
           onChange={(value) => {
             const newFiles = {
               ...files,
