@@ -18,9 +18,13 @@ export default function MainContent({
   };
 
   useEffect(() => {
+    defineCustomTheme(); // 테마를 미리 정의합니다.
+    console.log("Custom theme defined"); // 디버깅 메시지
+  }, []);
+
+  useEffect(() => {
     if (isColorBlindMode) {
       console.log("Setting custom theme"); // 디버깅 메시지
-      defineCustomTheme();
       monaco.editor.setTheme("colorBlindFriendlyTheme");
     } else {
       console.log("Setting default theme"); // 디버깅 메시지
@@ -33,7 +37,7 @@ export default function MainContent({
       className="flex-grow flex flex-col overflow-auto"
       style={{ backgroundColor: "#FAFFF9" }}
     >
-      <div className="flex justify-between items-center p-4 border-b border-gray-300">
+      <div className="flex justify-between items-center p-4 border-b border-gray-300 ">
         <span>{fileName}</span>
         <div className="flex space-x-4">
           <button
@@ -44,7 +48,7 @@ export default function MainContent({
             Run
           </button>
           <button
-            className="text-white  px-4 rounded"
+            className="text-white px-4 rounded"
             style={{ backgroundColor: "#457D61" }}
             onClick={handleColorBlindModeToggle}
           >
@@ -58,6 +62,18 @@ export default function MainContent({
           language={file.language}
           value={file.value}
           theme={isColorBlindMode ? "colorBlindFriendlyTheme" : "vs-dark"}
+          options={{
+            fontSize: isColorBlindMode ? 18 : 14, // 글자 크기를 변경합니다.
+            fontWeight: isColorBlindMode ? "bold" : "normal", // 글자 굵기를 변경합니다.
+          }}
+          onMount={(editor, monaco) => {
+            if (isColorBlindMode) {
+              console.log("onMount setting custom theme"); // 디버깅 메시지
+              monaco.editor.setTheme("colorBlindFriendlyTheme");
+            } else {
+              monaco.editor.setTheme("vs-dark");
+            }
+          }}
           onChange={(value) => {
             const newFiles = {
               ...files,
