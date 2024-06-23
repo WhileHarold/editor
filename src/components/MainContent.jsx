@@ -28,10 +28,10 @@ export default function MainContent({
       className="flex-grow flex flex-col overflow-auto"
       style={{ backgroundColor: "#FAFFF9" }}
     >
-      <div className="flex justify-between items-center p-4 border-b border-gray-300">
+      <div className="flex justify-between items-center p-4 border-b border-gray-300 mt-2">
         <span>{fileName}</span>
         <button
-          className="text-white px-4 rounded"
+          className="text-white px-4 rounded "
           style={{ backgroundColor: "#457D61" }}
           onClick={executeCode}
         >
