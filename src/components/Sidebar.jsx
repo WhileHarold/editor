@@ -111,7 +111,7 @@ export default function Sidebar({
         <div>Project</div>
         <div className="flex space-x-4">
           <div onClick={handleFileMakerClick} className="cursor-pointer ">
-            <img src={fileMaker} alt="fileMaker" className="w-6 h-6 mt-2" />
+            <img src={fileMaker} alt="fileMaker" className="w-6 h-6" />
           </div>
         </div>
       </div>

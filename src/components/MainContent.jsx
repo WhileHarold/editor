@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import defineCustomTheme from "../utils/defineCustomTheme";
 import * as monaco from "monaco-editor";
@@ -10,50 +10,54 @@ export default function MainContent({
   fileName,
   executeCode,
 }) {
+  const [isColorBlindMode, setIsColorBlindMode] = useState(false);
+
+  const handleColorBlindModeToggle = () => {
+    console.log("Toggling color blind mode"); // 디버깅 메시지
+    setIsColorBlindMode((prev) => !prev);
+  };
+
   useEffect(() => {
-    console.log("Defining custom theme...");
-    defineCustomTheme(monaco);
-    console.log("Custom theme defined");
-    if (monaco) {
-      console.log("Setting custom theme...");
+    if (isColorBlindMode) {
+      console.log("Setting custom theme"); // 디버깅 메시지
+      defineCustomTheme();
       monaco.editor.setTheme("colorBlindFriendlyTheme");
-      console.log("Custom theme set");
     } else {
-      console.error("Monaco Editor is not loaded");
+      console.log("Setting default theme"); // 디버깅 메시지
+      monaco.editor.setTheme("vs-dark");
     }
-  }, []);
+  }, [isColorBlindMode]);
 
   return (
     <main
       className="flex-grow flex flex-col overflow-auto"
       style={{ backgroundColor: "#FAFFF9" }}
     >
-      <div className="flex justify-between items-center p-4 border-b border-gray-300 mt-2">
+      <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <span>{fileName}</span>
-        <button
-          className="text-white px-4 rounded "
-          style={{ backgroundColor: "#457D61" }}
-          onClick={executeCode}
-        >
-          Run
-        </button>
+        <div className="flex space-x-4">
+          <button
+            className="text-white px-4 rounded"
+            style={{ backgroundColor: "#457D61" }}
+            onClick={executeCode}
+          >
+            Run
+          </button>
+          <button
+            className="text-white  px-4 rounded"
+            style={{ backgroundColor: "#457D61" }}
+            onClick={handleColorBlindModeToggle}
+          >
+            Color Blind Mode
+          </button>
+        </div>
       </div>
       <div className="flex-grow p-4">
         <Editor
           height="100%"
           language={file.language}
           value={file.value}
-          theme="colorBlindFriendlyTheme"
-          beforeMount={(monacoInstance) => {
-            console.log("Before mount");
-            defineCustomTheme(monacoInstance);
-            console.log("Custom theme defined before mount");
-          }}
-          onMount={(editor, monacoInstance) => {
-            console.log("Editor mounted");
-            monacoInstance.editor.setTheme("colorBlindFriendlyTheme");
-            console.log("Custom theme set after mount");
-          }}
+          theme={isColorBlindMode ? "colorBlindFriendlyTheme" : "vs-dark"}
           onChange={(value) => {
             const newFiles = {
               ...files,

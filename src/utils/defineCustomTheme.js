@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor";
 
-const defineCustomTheme = (monacoInstance) => {
-  monacoInstance.editor.defineTheme("colorBlindFriendlyTheme", {
+const defineCustomTheme = () => {
+  monaco.editor.defineTheme("colorBlindFriendlyTheme", {
     base: "vs-dark",
     inherit: true,
     rules: [
