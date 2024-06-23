@@ -1,5 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Editor from "@monaco-editor/react";
+import defineCustomTheme from "../utils/defineCustomTheme";
+import * as monaco from "monaco-editor";
+
 export default function MainContent({
   file,
   files,
@@ -7,6 +10,19 @@ export default function MainContent({
   fileName,
   executeCode,
 }) {
+  useEffect(() => {
+    console.log("Defining custom theme...");
+    defineCustomTheme(monaco);
+    console.log("Custom theme defined");
+    if (monaco) {
+      console.log("Setting custom theme...");
+      monaco.editor.setTheme("colorBlindFriendlyTheme");
+      console.log("Custom theme set");
+    } else {
+      console.error("Monaco Editor is not loaded");
+    }
+  }, []);
+
   return (
     <main
       className="flex-grow flex flex-col overflow-auto"
@@ -27,7 +43,17 @@ export default function MainContent({
           height="100%"
           language={file.language}
           value={file.value}
-          theme="vs-light"
+          theme="colorBlindFriendlyTheme"
+          beforeMount={(monacoInstance) => {
+            console.log("Before mount");
+            defineCustomTheme(monacoInstance);
+            console.log("Custom theme defined before mount");
+          }}
+          onMount={(editor, monacoInstance) => {
+            console.log("Editor mounted");
+            monacoInstance.editor.setTheme("colorBlindFriendlyTheme");
+            console.log("Custom theme set after mount");
+          }}
           onChange={(value) => {
             const newFiles = {
               ...files,
